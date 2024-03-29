@@ -1,0 +1,23 @@
+{
+    "clangd.arguments": [
+        "--compile-commands-dir=build", 
+        "--clang-tidy", 
+        "-header-insertion=never", 
+        "-j=8", 
+        "--background-index", 
+        "--pch-storage=memory"
+    ],
+    "editor.tabSize": 2, 
+    "clang-tidy.buildPath": "build",
+    "clang-tidy.checks": [
+        "readability-*", 
+        "performance-*", 
+        "portability-*", 
+        "bugprone-*", 
+        "clang-analyzer-*", 
+        "misc-*",
+        "google-*", 
+        // "boost-*", 
+        "cppcoreguidelines-*",
+    ]
+}
