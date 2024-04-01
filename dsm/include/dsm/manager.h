@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:56:32 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-01 17:34:33
+ * @Last Modified time: 2024-04-01 21:40:46
  */
 #pragma once
 
@@ -56,5 +56,28 @@ class Manager {
 
 }; // class Manager
 
+inline std::string random_string( size_t length )
+{
+  auto randchar = []() -> char
+  {
+    const char charset[] =
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
+    const size_t max_index = (sizeof(charset) - 1);
+    return charset[ rand() % max_index ];
+  };
+  std::string str(length,0);
+  std::generate_n( str.begin(), length, randchar );
+  return str;
+}
 
+template <typename T>
+inline std::vector<Object *> generate_objects(Manager &manager, size_t num_objects) {
+  std::vector<Object *> objects;
+  for (size_t i = 0; i < num_objects; i++) {
+    objects.push_back(manager.mmap(random_string(8) + std::to_string(i), sizeof(T), MapProt::READ, MapFlag::SHARED));
+  }
+  return objects;
+}
 } // namespace dsm

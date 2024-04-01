@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-30 17:37:49 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-01 18:22:59
+ * @Last Modified time: 2024-04-01 22:03:37
  */
 
 #include "dsm/manager.h"
@@ -171,12 +171,11 @@ Manager::Manager(const char *config_path) :
         res.set_content(base64::to_base64(data), "text/plain");
 
 
-        spdlog::info("Request from {}:{} mem `{}` read OK at {}:{} with content {}", 
+        spdlog::info("Request from {}:{} mem `{}` read OK at {}:{}", 
             req.remote_addr, req.remote_port, 
             name, 
             m_config.address, 
-            m_config.port, 
-            data);
+            m_config.port);
       }
   );
 

@@ -3,16 +3,18 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:39:59 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-01 16:52:44
+ * @Last Modified time: 2024-04-01 20:48:22
  */
 
 #pragma once
-#include "dsm/type.h"
 
 #include <vector>
+#include <string>
 #include <gsl-lite.hpp>
 
 namespace dsm {
+
+using Byte = char;
 
 class Manager;
 
