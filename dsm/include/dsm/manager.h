@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:56:32 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-03-30 22:59:04
+ * @Last Modified time: 2024-04-01 17:34:33
  */
 #pragma once
 
@@ -16,7 +16,10 @@
 #include <memory>
 #include <thread>
 
+// #define CPPHTTPLIB_ZLIB_SUPPORT
 #include <httplib.h>
+#include <gsl-lite.hpp>
+
 
 namespace dsm {
 
@@ -31,7 +34,6 @@ class Manager {
   Manager &operator=(const Manager &) = delete;
   Manager &operator=(Manager &&) = delete;
 
-  int open(const std::string &name, OpenFlag flag);
 
   Object* mmap(const std::string &name, size_t length, MapProt prot, MapFlag flags);
   
@@ -42,8 +44,8 @@ class Manager {
   Config m_config;
 
   friend Object;
-  std::vector<Byte> read(const std::string &name, size_t offset, size_t length) {}
-  void write(const std::string &name, size_t offset, const std::vector<Byte> &data) {}
+  gsl::span<Byte> read(const std::string &name, size_t offset, size_t length);
+  void write(const std::string &name, size_t offset, gsl::span<Byte> data);
 
   std::vector<std::unique_ptr<httplib::Client>> m_clients;
   std::unique_ptr<httplib::Server> m_server;

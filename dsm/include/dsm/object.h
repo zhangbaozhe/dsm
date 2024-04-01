@@ -3,18 +3,16 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:39:59 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-03-30 22:57:05
+ * @Last Modified time: 2024-04-01 16:52:44
  */
 
 #pragma once
 #include "dsm/type.h"
 
 #include <vector>
+#include <gsl-lite.hpp>
 
 namespace dsm {
-namespace consensus {
-class ServerWorker;
-} // namespace consensus
 
 class Manager;
 
@@ -27,13 +25,27 @@ class Object {
   Object() : m_name(nullptr), m_manager_ptr(nullptr) {}
   Object(std::string name, Manager *manager_ptr) : 
     m_name(name), m_manager_ptr(manager_ptr) {}
+  
+
+  // Explicitly disable copy constructor and copy assignment operator
+  // to avoid implicitly registering the object in `Manager`.
+  // Users should use `Manager::mmap` to create an object
+  Object(const Object &) = delete;
+  Object &operator=(const Object &) = delete;
+
+  // However uses can transfer the ownership of the object
+  // this does not affect the underlying manager's database
+  Object(Object &&);
+  Object &operator=(Object &&) noexcept;
+
   virtual ~Object() = default;
   
   std::string get_name() const { return m_name; };
 
-  std::vector<Byte> read(size_t offset, size_t length);
+ protected: 
+  gsl::span<Byte> read(size_t offset, size_t length);
 
-  void write(size_t offset, const std::vector<Byte> &data);
+  void write(size_t offset, gsl::span<Byte> data);
 
  private: 
   std::string m_name;
@@ -44,10 +56,11 @@ class Object {
   std::vector<Byte> m_data;
 
   friend Manager; 
-  friend consensus::ServerWorker;
   // Object's read & write operations are notified to `Manager`
   Manager *m_manager_ptr;
-}; // struct Object
+}; // class Object
+
+
 
 
 } // namespace dsm

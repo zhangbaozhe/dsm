@@ -17,6 +17,7 @@ add_library(dsm
 )
 target_link_libraries(dsm
   pthread
+  z
 )
 
 include_directories(
