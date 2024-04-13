@@ -12,16 +12,16 @@ int main(int argc, char *argv[]) {
   dsm::Manager manager(argv[1]);
 
   std::cout << "test" << std::endl;
-  auto obj = manager.mmap("test", 1024, dsm::MapProt::READ, dsm::MapFlag::SHARED);
+  auto obj = manager.mmap("test", 1024);
 
   std::cout << "test" << std::endl;
-  manager.mmap("test1", 1024, dsm::MapProt::READ, dsm::MapFlag::SHARED);
+  manager.mmap("test1", 1024);
 
   std::cout << "test" << std::endl;
-  manager.mmap("test2", 1024, dsm::MapProt::READ, dsm::MapFlag::SHARED);
+  manager.mmap("test2", 1024);
 
   std::cout << "test" << std::endl;
-  manager.mmap("test3", 1024, dsm::MapProt::READ, dsm::MapFlag::SHARED);
+  manager.mmap("test3", 1024);
 
   manager.munmap("test1");
   manager.munmap("test2");

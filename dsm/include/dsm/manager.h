@@ -16,7 +16,7 @@
 #include <memory>
 #include <thread>
 
-// #define CPPHTTPLIB_ZLIB_SUPPORT
+#define CPPHTTPLIB_ZLIB_SUPPORT
 #include <httplib.h>
 #include <gsl-lite.hpp>
 
@@ -35,9 +35,26 @@ class Manager {
   Manager &operator=(Manager &&) = delete;
 
 
-  Object* mmap(const std::string &name, size_t length, MapProt prot, MapFlag flags);
+  Object* mmap(const std::string &name, size_t length);
+
+  template <typename T>
+  T *mmap(const std::string &name) {
+     static_assert(std::is_same<T, Int32>::value || 
+                  std::is_same<T, UInt32>::value || 
+                  std::is_same<T, Int64>::value || 
+                  std::is_same<T, UInt64>::value || 
+                  std::is_same<T, Float>::value || 
+                  std::is_same<T, Double>::value || 
+                  std::is_same<T, Char>::value || 
+                  std::is_same<T, Bool>::value, 
+                  "T must be an Element type");
+    return static_cast<T *>(mmap(name, sizeof(typename T::value_type)));
+  }
   
   int munmap(const std::string &name);
+
+  std::vector<Object *> find_objects(const std::string &name_prefix);
+
 
  private: 
   std::unordered_map<std::string, Object *> m_database;
@@ -73,11 +90,21 @@ inline std::string random_string( size_t length )
 }
 
 template <typename T>
-inline std::vector<Object *> generate_objects(Manager &manager, size_t num_objects) {
+inline std::vector<Object *> generate_objects(Manager &manager, size_t num_objects, const std::string &prefix = "") {
+  static_assert(std::is_same<T, Int32>::value || 
+                std::is_same<T, UInt32>::value || 
+                std::is_same<T, Int64>::value || 
+                std::is_same<T, UInt64>::value || 
+                std::is_same<T, Float>::value || 
+                std::is_same<T, Double>::value || 
+                std::is_same<T, Char>::value || 
+                std::is_same<T, Bool>::value, 
+                "T must be an Element type");
   std::vector<Object *> objects;
   for (size_t i = 0; i < num_objects; i++) {
-    objects.push_back(manager.mmap(random_string(8) + std::to_string(i), sizeof(T), MapProt::READ, MapFlag::SHARED));
+    objects.push_back(manager.mmap(prefix + "_" + random_string(8) + "_" + std::to_string(i), sizeof(typename T::value_type)));
   }
   return objects;
 }
+
 } // namespace dsm

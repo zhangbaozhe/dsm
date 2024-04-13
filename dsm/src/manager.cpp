@@ -48,6 +48,7 @@ Manager::Manager(const char *config_path) :
 
         m_database[name] = new Object(name, this);
         m_database[name]->m_data.resize(size);
+        std::memset(m_database[name]->m_data.data(), 0, size);
 
         spdlog::info("Request from {}:{} mem `{}` with size of `{}` registered OK at {}:{}", 
             req.remote_addr, req.remote_port, 
@@ -183,6 +184,12 @@ Manager::Manager(const char *config_path) :
     m_server->listen(m_config.address, m_config.port);
   });
   m_server->wait_until_ready();
+  for (auto &client : m_clients) {
+    auto res = client->Post("/mem/show");
+    while (res.error() != httplib::Error::Success) {
+      res = client->Post("/mem/show");
+    }
+  }
 
 }
 
@@ -195,7 +202,7 @@ Manager::~Manager() {
 
 
 
-Object *Manager::mmap(const std::string &name, size_t length, MapProt prot, MapFlag flags) {
+Object *Manager::mmap(const std::string &name, size_t length) {
   if (m_database.find(name) != m_database.end()) {
     return m_database[name];
   }
@@ -243,8 +250,8 @@ gsl::span<Byte> Manager::read(const std::string &name, size_t offset, size_t len
   param.emplace("length", std::to_string(length));
   for (auto &client : m_clients) {
     auto res = client->Post("/mem/read", param);
-    std::cout << res->status << std::endl;
-    std::cout << (int)base64::from_base64(res->body)[0] << std::endl;
+    // std::cout << res->status << std::endl;
+    // std::cout << (int)base64::from_base64(res->body)[0] << std::endl;
   }
   // TODO: consensus
   return gsl::span<Byte>(m_database[name]->m_data.data() + offset, length);
@@ -265,10 +272,33 @@ void Manager::write(const std::string &name, size_t offset, gsl::span<Byte> data
   param.emplace("data", base64::to_base64(data_view));
   for (auto &client : m_clients) {
     auto res = client->Post("/mem/write", param);
-    std::cout << res->status << std::endl;
-    std::cout << res->body << std::endl;
+    // std::cout << res->status << std::endl;
+    // std::cout << res->body << std::endl;
   }
   std::copy(data.begin(), data.end(), m_database[name]->m_data.begin() + offset);
 }
+
+std::vector<Object *> Manager::find_objects(const std::string &name_prefix) {
+  std::vector<std::pair<size_t, Object *>> kvs;
+  for (const auto &it : m_database) {
+    if (it.first.find(name_prefix) == 0) {
+      std::vector<std::string> tmp;
+      utils::split(it.first, '_', tmp);
+      size_t index = std::stoul(tmp[tmp.size() - 1]);
+      kvs.push_back({index, it.second});
+    }
+  }
+  // sort by index
+  std::sort(kvs.begin(), kvs.end(), [](const auto &a, const auto &b) {
+    return a.first < b.first;
+  });
+  // return as vector
+  std::vector<Object *> objects;
+  for (const auto &kv : kvs) {
+    objects.push_back(kv.second);
+  }
+  return objects;
+}
+
 
 } // namespace dsm
