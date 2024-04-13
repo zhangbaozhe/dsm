@@ -1,1 +1,5 @@
 build/
+
+docs/proposal/*
+!docs/proposal/proposal.tex
+!docs/proposal/proposal.bib
