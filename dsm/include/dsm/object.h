@@ -47,7 +47,7 @@ class Object {
   std::string get_name() const { return m_name; };
 
  protected: 
-  gsl::span<Byte> read(size_t offset, size_t length);
+  gsl::span<Byte> read(size_t offset, size_t length) const;
 
   void write(size_t offset, gsl::span<Byte> data);
 
@@ -218,6 +218,16 @@ class Element final : public Object {
   }
 
   operator T() {
+    auto tmp = read(0, sizeof(T));
+    T t = 0;
+    Byte *byte_ptr = reinterpret_cast<Byte *>(&t);
+    for (size_t i = 0; i < tmp.size(); i++) {
+      byte_ptr[i] = tmp[i];
+    }
+    return t;
+  }
+
+  operator T() const {
     auto tmp = read(0, sizeof(T));
     T t = 0;
     Byte *byte_ptr = reinterpret_cast<Byte *>(&t);
@@ -565,3 +575,9 @@ using Matrix4D = Matrix<Double, 4, 4>;
 
 
 } // namespace dsm
+
+template <typename T>
+std::ostream &operator<<(std::ostream &os, const dsm::Element<T> &e) {
+  os << static_cast<T>(e);
+  return os;
+}

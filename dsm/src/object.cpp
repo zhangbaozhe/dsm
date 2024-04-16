@@ -32,7 +32,7 @@ Object &Object::operator=(Object &&other) noexcept{
   return *this;
 }
 
-gsl::span<Byte> Object::read(size_t offset, size_t length) {
+gsl::span<Byte> Object::read(size_t offset, size_t length) const {
   if (offset + length > m_data.size()) {
     throw std::out_of_range("Read out of range");
   }

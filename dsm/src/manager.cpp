@@ -181,6 +181,7 @@ Manager::Manager(const char *config_path) :
   );
 
   m_listen_thread = std::thread([this]{
+    // TODO: is listen thread safe?
     m_server->listen(m_config.address, m_config.port);
   });
   m_server->wait_until_ready();

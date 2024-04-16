@@ -25,9 +25,9 @@ int main(int argc, char *argv[]) {
   // sleep(1);
   dsm::Int32 *data = manager.mmap<dsm::Int32>("test");
   // *data = 0;
-
+  // TODO: sync
   for (size_t i = 0; i < 100; i++) {
     *data += 1;
-    std::cout << (int)*data << std::endl;
+    std::cout << *data << std::endl;
   }
 }

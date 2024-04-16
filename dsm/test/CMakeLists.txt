@@ -1,3 +1,5 @@
+add_compile_options(-Wno-deprecated-declarations)
+
 add_executable(allocation1
   allocation1.cpp
 )
