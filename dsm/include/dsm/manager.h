@@ -3,18 +3,20 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:56:32 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-01 21:40:46
+ * @Last Modified time: 2024-04-17 18:27:56
  */
 #pragma once
 
 #include "dsm/type.h"
 #include "dsm/object.h"
 #include "dsm/config.h"
+#include "dsm/utils/safe_map.h"
 
 
 #include <unordered_map>
 #include <memory>
 #include <thread>
+#include <atomic>
 
 #define CPPHTTPLIB_ZLIB_SUPPORT
 #include <httplib.h>
@@ -25,6 +27,7 @@ namespace dsm {
 
 class Manager {
  public: 
+
   explicit Manager(const char *config_path);
   ~Manager();
 
@@ -35,8 +38,35 @@ class Manager {
   Manager &operator=(Manager &&) = delete;
 
 
+  void create_mutex(const std::string &name);
+  void delete_mutex(const std::string &name);
+
+  /**
+   * @brief Tell other peers that this process is processing the object, 
+   *       and other peers should wait until the process is done.
+   * 
+   * @param name 
+   */
+  void mutex_lock(const std::string &name);
+  bool mutex_try_lock(const std::string &name);
+  void mutex_unlock(const std::string &name);
+
+  /**
+   * @brief Create a new object with the given name and size
+   * 
+   * @param name 
+   * @param length 
+   * @return Object* 
+   */
   Object* mmap(const std::string &name, size_t length);
 
+  /**
+   * @brief Create a new object with the given name and size
+   * 
+   * @tparam T 
+   * @param name 
+   * @return T* 
+   */
   template <typename T>
   T *mmap(const std::string &name) {
      static_assert(std::is_same<T, Int32>::value || 
@@ -51,13 +81,27 @@ class Manager {
     return static_cast<T *>(mmap(name, sizeof(typename T::value_type)));
   }
   
-  int munmap(const std::string &name);
+  /**
+   * @brief Delete the object with the given name
+   * 
+   * @param name 
+   * @return void 
+   */
+  void munmap(const std::string &name);
 
+  /**
+   * @brief Find the object with the given prefix
+   * 
+   * @param name_prefix 
+   * @return std::vector<Object *> 
+   */
   std::vector<Object *> find_objects(const std::string &name_prefix);
 
 
  private: 
-  std::unordered_map<std::string, Object *> m_database;
+  utils::SafeMap<std::string, Object *> m_database;
+  utils::SafeMap<std::string, int> m_mutexes;
+
   Config m_config;
 
   friend Object;
@@ -68,8 +112,7 @@ class Manager {
   std::unique_ptr<httplib::Server> m_server;
 
   std::thread m_listen_thread;
-
-
+  std::mutex m_internal_thread_mutex;
 
 }; // class Manager
 

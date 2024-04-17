@@ -10,4 +10,7 @@ int main(int argc, char *argv[]) {
     *data += 1;
     std::cout << (float)*data << std::endl;
   }
+  
+  sleep(1);
+  std::cout << *data << std::endl;
 }
