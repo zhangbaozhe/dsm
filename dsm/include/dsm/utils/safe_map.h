@@ -14,6 +14,12 @@
 namespace dsm {
 namespace utils {
 
+/**
+ * @brief Thin wrapper around std::unordered_map with thread safety
+ * 
+ * @tparam Key 
+ * @tparam Value 
+ */
 template <typename Key, typename Value>
 class SafeMap {
  public:

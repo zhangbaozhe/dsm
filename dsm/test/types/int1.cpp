@@ -26,8 +26,11 @@ int main(int argc, char *argv[]) {
   dsm::Int32 *data = manager.mmap<dsm::Int32>("test");
   // *data = 0;
   // TODO: sync
-  for (size_t i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 10; i++) {
     *data += 1;
-    std::cout << *data << std::endl;
+    // std::cout << *data << std::endl;
   }
+
+  sleep(1);
+  std::cout << "Result " << *data << std::endl;
 }

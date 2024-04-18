@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:56:32 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-17 18:27:56
+ * @Last Modified time: 2024-04-18 14:18:19
  */
 #pragma once
 
@@ -48,7 +48,6 @@ class Manager {
    * @param name 
    */
   void mutex_lock(const std::string &name);
-  bool mutex_try_lock(const std::string &name);
   void mutex_unlock(const std::string &name);
 
   /**
@@ -100,7 +99,15 @@ class Manager {
 
  private: 
   utils::SafeMap<std::string, Object *> m_database;
-  utils::SafeMap<std::string, int> m_mutexes;
+
+  /**
+   * NOTE: If we want to achieve easy mutex implementation in this DSM framework,
+   *       the underlying mutex `int` should be implemented with `strong` atomicity, 
+   *       not in the local memory order, but across the whole DSM framework.
+   * GOAL: Need to implement the `strong` atomicity for the `int` type in the `SafeMap` class.
+   */
+  utils::SafeMap<std::string, std::atomic_int> m_mutexes;
+  int m_pattern;
 
   Config m_config;
 
@@ -110,6 +117,7 @@ class Manager {
 
   std::vector<std::unique_ptr<httplib::Client>> m_clients;
   std::unique_ptr<httplib::Server> m_server;
+  std::unique_ptr<httplib::Client> m_param_server;
 
   std::thread m_listen_thread;
   std::mutex m_internal_thread_mutex;

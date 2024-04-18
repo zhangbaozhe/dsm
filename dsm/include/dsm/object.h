@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:39:59 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-01 20:48:22
+ * @Last Modified time: 2024-04-18 14:58:12
  */
 
 #pragma once
@@ -13,6 +13,7 @@
 #include <vector>
 #include <string>
 #include <gsl-lite.hpp>
+#include <atomic>
 
 namespace dsm {
 
@@ -45,6 +46,7 @@ class Object {
   virtual ~Object() = default;
   
   std::string get_name() const { return m_name; };
+
 
  protected: 
   gsl::span<Byte> read(size_t offset, size_t length) const;

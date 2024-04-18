@@ -37,5 +37,11 @@ add_executable(main
 target_link_libraries(main
   dsm
 )
+add_executable(param_server
+  param_server.cpp
+)
+target_link_libraries(param_server
+  pthread
+)
 
 add_subdirectory(test)

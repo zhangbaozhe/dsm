@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   // std::this_thread::sleep_for(std::chrono::seconds(10));
   // manager.mutex_unlock("test");
 
-  for (int i = 0; i < 2000; i++) {
+  for (int i = 0; i < 1000; i++) {
     manager.mutex_lock("test");
     *data += 1;
     std::cout << *data << std::endl;
