@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>DSM Presentation</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/dracula.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+
+				<!-- # 1 -->
+				<section>
+					<h2>A Simple Implementation of a Distributed Shared Memory System</h2>
+					<p>Baozhe Zhang (张宝哲)</p>
+          <p>Date: May , 2024</p>
+				</section>
+
+				<!-- # 2 -->
+				<section>
+					<h2>Contents</h2>
+					<ul>
+						<li>Introduction</li>
+						<li>Design</li>
+						<li>Implementation</li>
+						<li>Experiments</li>
+						<li>Conclusion</li>
+					</ul>
+				</section>
+
+				<!-- # 3 -->
+				<section>
+					<h3>Introduction: Shared Memory Model</h3>
+					<p>A simple multi-threaded program</p>
+
+					<pre><code data-trim data-noescape>
+int main(int argc, char *argv[]) {
+  std::mutex m;
+  int i = 0;
+  auto f1 = [&i, &m]() {
+    for (int j = 0; j < 1000; j++) 
+      i += 1; // Shared
+  };
+  auto f2 = [&i, &m]() {
+    for (int j = 0; j < 1000; j++) {
+      i += 1; // Not synchronized
+    }
+  };
+  std::thread t1(f1); std::thread t2(f2);
+  t1.join(); t2.join();
+}
+  				</code></pre>
+				</section>
+
+				<!-- # 4 -->
+				<section>
+					<h3>Introduction: Distributed Shared Memory Model</h3>
+					<img src="images/dsm-concept.png" width="60%" align="middle">
+					<figcaption>DSM Model [1]</figcaption>
+				</section>
+
+				<!-- $ 5 -->
+				<section>
+					<h3>Introduction: Challenges for DSM Systems</h3>
+					<ul>
+						<li>Memory Consistency: Read & Write orders?</li>
+						<li>Performance: Network overhead?</li>
+						<li>Scalability: Easy to scale?</li>
+					</ul>
+				</section>
+
+
+
+
+				<section>
+					<h3>References</h3>
+					<ol>
+						<li style="font-size: x-small;">
+							B. Nitzberg and V. Lo, "Distributed shared memory: a survey of issues and algorithms," in Computer, vol. 24, no. 8, pp. 52-60, Aug. 1991, doi: 10.1109/2.84877. keywords: {Data handling;Distributed computing;Memory management},
+						</li>
+					</ol>
+				</section>
+
+
+
+			</div>
+		</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>

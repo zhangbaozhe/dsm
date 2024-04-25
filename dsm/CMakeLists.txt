@@ -1,5 +1,5 @@
 add_compile_options(-Wno-deprecated-declarations)
-
+add_compile_options(-O3)
 
 
 set(DSM_INCLUDE_DIR

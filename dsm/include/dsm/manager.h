@@ -106,7 +106,7 @@ class Manager {
    *       not in the local memory order, but across the whole DSM framework.
    * GOAL: Need to implement the `strong` atomicity for the `int` type in the `SafeMap` class.
    */
-  utils::SafeMap<std::string, std::atomic_int> m_mutexes;
+  // utils::SafeMap<std::string, std::atomic_int> m_mutexes;
   int m_pattern;
 
   Config m_config;

@@ -2,8 +2,8 @@
  * @Brief: 
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-30 17:37:49 
- * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-18 15:02:43
+ * @Last Modified by: mikey.zhaopeng
+ * @Last Modified time: 2024-04-25 14:50:19
  */
 
 #include "dsm/manager.h"
@@ -15,18 +15,29 @@
 
 namespace dsm {
 
-int64_t read_from_param_server(const std::string &name, httplib::Client *client) {
+// read and write must be called in sequence
+int64_t read_from_param_server(int id, const std::string &name, httplib::Client *client) {
   httplib::Params param;
+  param.emplace("id", std::to_string(id));
   param.emplace("name", name);
   auto res = client->Post("/param/read", param);
+  while (res->status != 200) {
+    res = client->Post("/param/read", param);
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
   return std::stoll(res->body);
 }
 
-void write_to_param_server(const std::string &name, int64_t value, httplib::Client *client) {
+void write_to_param_server(int id, const std::string &name, int64_t value, httplib::Client *client) {
   httplib::Params param;
+  param.emplace("id", std::to_string(id));
   param.emplace("name", name);
   param.emplace("value", std::to_string(value));
   auto res = client->Post("/param/write", param);
+  while (res->status != 200) {
+    res = client->Post("/param/write", param);
+    // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
 }
 
 Manager::Manager(const char *config_path) :
@@ -38,14 +49,14 @@ Manager::Manager(const char *config_path) :
     m_clients.emplace_back(
         std::move(std::make_unique<httplib::Client>(peer.address, peer.port))
     );
-    m_pattern = m_pattern | (1 << peer.id);
+    m_pattern = m_pattern | (0 << peer.id);
   }
-  m_pattern = m_pattern | (0 << m_config.id);
+  m_pattern = m_pattern | (1 << m_config.id);
   m_param_server = std::make_unique<httplib::Client>(m_config.param_server.address, m_config.param_server.port);
 
 
   m_server = std::make_unique<httplib::Server>();
-  m_server->new_task_queue = [] { return new httplib::ThreadPool(1); };
+  m_server->new_task_queue = [] { return new httplib::ThreadPool(2); };
 
   m_server->Post("/health", [](const httplib::Request &req, httplib::Response &res) {
     res.status = 200;
@@ -232,81 +243,87 @@ Manager::~Manager() {
 
 
 void Manager::create_mutex(const std::string &name) {
-  if (m_mutexes.find(name)) {
-    return;
-  }
-  m_mutexes[name] = 0;
+  
   httplib::Params param;
   param.emplace("name", std::string(name));
-  for (auto &client : m_clients) {
-    auto res = client->Post("/mutex/registration", param);
-  }
 
   auto res = m_param_server->Post("/param/registration", param);
 }
 
 void Manager::delete_mutex(const std::string &name) {
-  if (!m_mutexes.find(name)) {
-    throw std::runtime_error("Mutex not found");
-  }
-  m_mutexes.erase(name);
+  
   httplib::Params param;
   param.emplace("name", std::string(name));
-  for (auto &client : m_clients) {
-    auto res = client->Post("/mutex/deletion", param);
-  }
 
   auto res = m_param_server->Post("/param/deletion", param);
 }
 
 void Manager::mutex_lock(const std::string &name) {
-  if (!m_mutexes.find(name)) {
-    throw std::runtime_error("Mutex not found");
-  }
+
 
   std::vector<httplib::Client *> unlocked_clients;
 
   httplib::Params param;
   param.emplace("name", std::string(name));
 
-  auto mutex_param = read_from_param_server(name, m_param_server.get());
+  // TODO: avoid lambda
+  auto check_avilable = [name, this] {
+    auto mutex_param = read_from_param_server(m_config.id, name, m_param_server.get());
+    write_to_param_server(m_config.id, name, mutex_param, m_param_server.get());
+    return mutex_param == 0;
+  };
 
-  // lock the mutex
-  write_to_param_server(name, m_pattern, m_param_server.get());
+  std::function<void()> lock;
+  lock = [name, this, &lock] {
+    auto temp = read_from_param_server(m_config.id, name, m_param_server.get());
+    if (temp == 0) {
+      write_to_param_server(m_config.id, name, m_pattern, m_param_server.get());
+      return;
+    } else {
+      write_to_param_server(m_config.id, name, temp, m_param_server.get());
+      lock();
+    }
+  };
 
-  // if the current mutex is locked, i.e., 
-  // in this process, the other process is using this mutex
-  // so this process needs to wait it for unlocking 
-  while (mutex_param != m_pattern) {
-    // spdlog::warn("In `{}` mutex `{}` is locked, waiting ...", __func__, name);
-    // FIXME: mutex -- sleep time ?
-    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    mutex_param = read_from_param_server(name, m_param_server.get());
-    if (mutex_param == 0) {
-      write_to_param_server(name, m_pattern, m_param_server.get());
+  if (check_avilable()) {
+    // lock
+    lock();
+    // spdlog::warn("lock");
+    return;
+  } else {
+    while (true) {
+      // TODO: this is too silly
+      // std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      if (check_avilable()) {
+        lock();
+        // spdlog::warn("lock");
+        return;
+      }
     }
   }
 
-  // lock the mutex
-  write_to_param_server(name, m_pattern, m_param_server.get());
+
 }
 
 
 void Manager::mutex_unlock(const std::string &name) {
-  if (!m_mutexes.find(name)) {
-    throw std::runtime_error("Mutex not found");
-  }
+  
 
-  auto mutex_param = read_from_param_server(name, m_param_server.get());
+  // read
+  auto mutex_param = read_from_param_server(m_config.id, name, m_param_server.get());
+  write_to_param_server(m_config.id, name, mutex_param, m_param_server.get());
+
+  // spdlog::warn("unlock {} == {}", mutex_param, m_pattern);
   assert(mutex_param == m_pattern);
 
   httplib::Params param;
   param.emplace("name", std::string(name));
-  // acquire <- 0
-  // release <- 1
+
+  // running -> 1
   int temp = 0;
   // temp = temp | (1 << m_config.id);
-  write_to_param_server(name, temp, m_param_server.get());
+  read_from_param_server(m_config.id, name, m_param_server.get());
+  write_to_param_server(m_config.id, name, temp, m_param_server.get());
 }
 
 
@@ -342,8 +359,6 @@ void Manager::munmap(const std::string &name) {
 
   for (auto &client : m_clients) {
     auto res = client->Post("/mem/deletion", param);
-    std::cout << res->status << std::endl;
-    std::cout << res->body << std::endl;
   }
 }
 
@@ -355,8 +370,6 @@ gsl::span<Byte> Manager::read(const std::string &name, size_t offset, size_t len
     throw std::runtime_error("Out of range");
   }
 
-
-  
   return gsl::span<Byte>(m_database[name]->m_data.data() + offset, length);
 
 }
