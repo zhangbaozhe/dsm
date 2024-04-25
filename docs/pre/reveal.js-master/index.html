@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 				<!-- # 4 -->
 				<section>
 					<h3>Introduction: Distributed Shared Memory Model</h3>
-					<img src="images/dsm-concept.png" width="60%" align="middle">
+					<img src="/images/dsm-concept.png" width="60%" align="middle">
 					<figcaption>DSM Model [1]</figcaption>
 				</section>
 
@@ -76,6 +76,39 @@ int main(int argc, char *argv[]) {
 						<li>Scalability: Easy to scale?</li>
 					</ul>
 				</section>
+
+				<section>
+					<h3>Design</h3>
+					<ul>
+						<li>Users: C++ programmers</li>
+						<li>APIs: Object-based</li>
+						<li>Support: </li>
+							<ul>
+								<li>Memory Allocation / Deallocation</li>
+								<li>Overloaded Read & Write Operations</li>
+								<li>Mutex Synchronizations</li>
+							</ul>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Design: Exmaple 1</h3>
+
+					<pre><code data-trim data-noescape>
+#include "dsm/manager.h"
+int main(int argc, char *argv[]) {
+	/* dsm::Manager is the entrypoint */
+  dsm::Manager manager(argv[1]); 
+	/* wrapper class for int */
+  dsm::Int32 *data = manager.mmap<dsm::Int32>("test"); 
+  for (size_t i = 0; i < 100; i++) 
+    *data += 1; /* overloaded read & write */
+	return 0;
+}
+					</code></pre>
+				</section>
+
+
 
 
 
