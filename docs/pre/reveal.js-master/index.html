@@ -19,9 +19,9 @@
 
 				<!-- # 1 -->
 				<section>
-					<h2>A Simple Implementation of a Distributed Shared Memory System</h2>
+					<h2 style="color:aliceblue;">A Simple Implementation of a Distributed Shared Memory System</h2>
 					<p>Baozhe Zhang (张宝哲)</p>
-          <p>Date: May , 2024</p>
+          <p>Date: May 7, 2024</p>
 				</section>
 
 				<!-- # 2 -->
@@ -39,22 +39,17 @@
 				<!-- # 3 -->
 				<section>
 					<h3>Introduction: Shared Memory Model</h3>
-					<p>A simple multi-threaded program</p>
+					<p>A simple multi-threaded program in C++</p>
 
 					<pre><code data-trim data-noescape>
 int main(int argc, char *argv[]) {
   std::mutex m;
   int i = 0;
-  auto f1 = [&i, &m]() {
+  auto add = [&i, &m]() {
     for (int j = 0; j < 1000; j++) 
-      i += 1; // Shared
+      i += 1; // Shared, not synchronized
   };
-  auto f2 = [&i, &m]() {
-    for (int j = 0; j < 1000; j++) {
-      i += 1; // Not synchronized
-    }
-  };
-  std::thread t1(f1); std::thread t2(f2);
+  std::thread t1(add); std::thread t2(add);
   t1.join(); t2.join();
 }
   				</code></pre>
@@ -72,13 +67,14 @@ int main(int argc, char *argv[]) {
 					<h3>Introduction: Challenges for DSM Systems</h3>
 					<ul>
 						<li>Memory Consistency: Read & Write orders?</li>
+						<li>Update: what policy?</li>
 						<li>Performance: Network overhead?</li>
 						<li>Scalability: Easy to scale?</li>
 					</ul>
 				</section>
 
 				<section>
-					<h3>Design</h3>
+					<h3>Design: Goals</h3>
 					<ul>
 						<li>Users: C++ programmers</li>
 						<li>APIs: Object-based</li>
@@ -92,8 +88,42 @@ int main(int argc, char *argv[]) {
 				</section>
 
 				<section>
-					<h3>Design: Exmaple 1</h3>
+					<h3>Design: Features</h3>
+					<ul>
+						<li>Full replication: each node has a copy of the VM</li>
+						<li>Memory (de)allocation: aware to all nodes</li>
+						<li>Write-update: update to all nodes</li>
+						<li>Read: from the host node</li>
+						<li>Mutex: centralized server &rightarrow; atomicity among nodes and strong consistency</li>
+					</ul>
+				</section>
 
+				<section>
+					<h3>Implementation</h3>
+					<ul>
+						<li>Lang: C++ 17</li>
+						<li>Network comm: HTTP</li>
+						<li>Local memory management</li>
+						<ul>
+							<li>Don't care &rightarrow; Leave it to OS (e.g., malloc)</li>
+							<li>Not tight memory layout (e.g., a shared `int32` consumes more than 4 bytes)</li>
+						</ul>
+						<pre><code data-trim data-noescape>
+class dsm::Object {
+	... 
+ private: 
+	std::string m_name;
+  std::vector&lt;Byte&gt; m_data; // Byte = char
+  friend Manager; 
+  // Object's read & write operations are notified to `Manager`
+  dsm::Manager *m_manager_ptr;
+};
+						</code></pre>
+					</ul>
+				</section>
+
+				<section>
+					<h3>Impl: Exmaple 1</h3>
 					<pre><code data-trim data-noescape>
 #include "dsm/manager.h"
 int main(int argc, char *argv[]) {
@@ -106,6 +136,29 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 					</code></pre>
+				</section>
+
+				<section>
+					<h3>Impl: Exmaple 2 - Memory</h3>
+					<pre><code data-trim data-noescape>
+/* Manually allocate 1024-byte pointed by obj_1024 */
+dsm::Object *obj_1024 = manager.mmap("obj_1024", 1024);
+/* Use derived class to reference */
+dsm::Int32 *i = manager.mmap("i");
+dsm::Float *f = manager.mmap("f");
+dsm::Double *d = manager.mmap("d");
+/* Deallocate */
+manager.munmap("obj_1024");
+manager.munmap("f");
+					</code></pre>
+				</section>
+
+				<section>
+					<h3>Experiments: `int` Addition</h3>
+				</section>
+
+				<section>
+					<h3>Experiments: Matrix Multiplication</h3>
 				</section>
 
 

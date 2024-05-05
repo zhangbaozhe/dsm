@@ -20,4 +20,6 @@
         // "boost-*", 
         "cppcoreguidelines-*",
     ],
+    "fileheader.Author": "Baozhe ZHANG",
+    "fileheader.LastModifiedBy": "Baozhe ZHANG",
 }

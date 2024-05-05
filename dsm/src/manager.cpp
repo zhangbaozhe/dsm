@@ -2,12 +2,13 @@
  * @Brief: 
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-30 17:37:49 
- * @Last Modified by: mikey.zhaopeng
- * @Last Modified time: 2024-04-25 14:50:19
+ * @Last Modified by: Baozhe ZHANG
+ * @Last Modified time: 2024-05-05 18:10:37
  */
 
 #include "dsm/manager.h"
 #include "dsm/utils/stringutils.h"
+
 
 #include <spdlog/spdlog.h>
 #include <base64.hpp>
@@ -59,6 +60,7 @@ Manager::Manager(const char *config_path) :
   m_server->new_task_queue = [] { return new httplib::ThreadPool(2); };
 
   m_server->Post("/health", [](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     res.status = 200;
     res.set_content("OK", "text/plain");
   });
@@ -67,6 +69,7 @@ Manager::Manager(const char *config_path) :
   // like malloc
   m_server->Post("/mem/registration", 
       [this](const httplib::Request &req, httplib::Response &res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         auto name = req.get_param_value("name");
         size_t size = std::stoul(req.get_param_value("size"));
 
@@ -85,11 +88,13 @@ Manager::Manager(const char *config_path) :
         m_database[name]->m_data.resize(size);
         std::memset(m_database[name]->m_data.data(), 0, size);
 
+#ifdef DEBUG_LOG
         spdlog::info("Request from {}:{} mem `{}` with size of `{}` registered OK at {}:{}", 
             req.remote_addr, req.remote_port, 
             name, size,
             m_config.address, 
             m_config.port);
+#endif // DEBUG_LOG
 
         res.status = 200;
         res.set_content("Registration OK\n", "text/plain");
@@ -98,26 +103,30 @@ Manager::Manager(const char *config_path) :
   );
   m_server->Post("/mem/deletion", 
       [this](const httplib::Request &req, httplib::Response &res) {
-
+        res.set_header("Access-Control-Allow-Origin", "*");
         auto name = req.get_param_value("name");
         auto size = m_database[name]->m_data.size();
 
         delete m_database[name];
         m_database.erase(name);
 
+#ifdef DEBUG_LOG
         spdlog::info("Request from {}:{} mem `{}` with size of `{}` deleted OK at {}:{}", 
             req.remote_addr, req.remote_port, 
             name, size, 
             m_config.address, 
             m_config.port);
+#endif // DEBUG_LOG
 
         res.status = 200;
         res.set_content("Deletion OK\n", "text/plain");
 
       }
   );
+
   m_server->Post("/stop", 
       [this](const httplib::Request &req, httplib::Response &res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         spdlog::info("Request from {}:{} server stopped at {}:{}", 
             req.remote_addr, req.remote_port,
             m_config.address, m_config.port);
@@ -127,6 +136,7 @@ Manager::Manager(const char *config_path) :
 
   m_server->Get("/mem/show", 
       [this](const httplib::Request &req, httplib::Response &res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         Json json;
         for (const auto &it : m_database.get_map()) {
           json.push_back({{"name", it.first}, {"size", it.second->m_data.size()}});
@@ -138,6 +148,7 @@ Manager::Manager(const char *config_path) :
 
   m_server->Post("/mem/write", 
       [this](const httplib::Request &req, httplib::Response &res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         auto name = req.get_param_value("name");      
         auto offset = std::stoul(req.get_param_value("offset"));
         auto length = std::stoul(req.get_param_value("length"));
@@ -162,12 +173,13 @@ Manager::Manager(const char *config_path) :
 
         auto data = base64::from_base64(req.get_param_value("data"));
         std::copy(data.begin(), data.end(), m_database[name]->m_data.begin() + offset);
-
+#ifdef DEBUG_LOG
         spdlog::info("Request from {}:{} mem `{}` write OK at {}:{}", 
             req.remote_addr, req.remote_port, 
             name, 
             m_config.address, 
             m_config.port);
+#endif // DEBUG_LOG
         res.status = 200;
         res.set_content("Write OK\n", "text/plain");
       }
@@ -175,6 +187,7 @@ Manager::Manager(const char *config_path) :
 
   m_server->Post("/mem/read", 
       [this](const httplib::Request &req, httplib::Response &res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
         auto name = req.get_param_value("name");      
         auto offset = std::stoul(req.get_param_value("offset"));
         auto length = std::stoul(req.get_param_value("length"));
@@ -226,10 +239,13 @@ Manager::Manager(const char *config_path) :
     auto res = client->Post("/health");
     while (res.error() != httplib::Error::Success) {
       res = client->Post("/health");
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::cout << "Waiting client ..." << std::endl;
     }
   }
   while (m_param_server->Post("/health").error() != httplib::Error::Success) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::cout << "Waiting server ..." << std::endl;
   }
 
 }

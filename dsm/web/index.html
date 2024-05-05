@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DSM Client</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- <script src="htmx.min.js"></script> -->
+</head>
+
+<body>
+    <h1>DSM Client</h1>
+
+    <!-- load json config from text -->
+    <div id="json_load">
+      <textarea id="json_text" rows="10" cols="50"></textarea>
+      <button onclick="getJson(json_text.value)">Load</button>
+      <div id="json_error">
+      </div>
+    </div>
+
+    <!-- display json config -->
+    <div id="json_display">
+    </div>
+
+    <!-- check node status -->
+    <div id="dsm_check">
+    </div>
+
+
+</html>
+
+
+
+<script>
+  /*
+  { 
+  "nodes": [
+    {
+    "id": 1, 
+    "address": "127.0.0.1", 
+    "port": 8080
+    }, 
+    {
+      "id": 2,
+      "address": "127.0.0.1",
+      "port": 8081
+    }
+  ], 
+  "param_server": {
+    "address": "127.0.0.1",
+    "port": 8082
+  }
+  }
+  */
+  var json = null
+  var nodes = []
+
+  function base64ToBytes(base64) {
+    const binString = atob(base64);
+    return Uint8Array.from(binString, (m) => m.codePointAt(0));
+  }
+
+  function bytesToBase64(bytes) {
+    const binString = Array.from(bytes, (byte) =>
+      String.fromCodePoint(byte),
+    ).join("");
+    return btoa(binString);
+  }
+
+  function bytesToInt32(bytes) {
+    return new Int32Array(bytes.buffer)[0]
+  }
+
+  function bytesToInt64(bytes) {
+    return new Int64Array(bytes.buffer)[0]
+  }
+
+  function bytesToFloat(bytes) {
+    return new Float32Array(bytes.buffer)[0]
+  }
+
+  function bytesToDouble(bytes) {
+    return new Float64Array(bytes.buffer)[0]
+  }
+
+
+  function getJson(str) {
+    json_display.innerHTML = ""
+    try {
+      json = JSON.parse(str)
+    } catch (e) {
+      console.error(e)
+      json_text.value = ""
+      json_error.innerHTML = '<p style="color: red;">Invalid JSON</p>'
+      json = null
+    }
+    console.log(json)
+
+    if (json) {
+      displayJson(json)
+      displayDSMCheck()
+    }
+  }
+
+
+
+  function displayJson(json) {
+    json_display.innerHTML = "<h2>Nodes</h2>"
+    for (var i = 0; i < json['nodes'].length; i++) {
+      var id = json['nodes'][i]['id']
+      var address = json['nodes'][i]['address']
+      var port = json['nodes'][i]['port']
+      nodes.push({id: id, address: address, port: port})
+      json_display.innerHTML += "<li>Node " + id + ": " + address + ":" + port + "</li>"
+    }
+
+    json_display.innerHTML += "<h2>Parameter Server</h2>"
+    json_display.innerHTML += "<p>" + json['param_server']['address'] + ":" + json['param_server']['port'] + "</p>"
+  }
+
+  function displayDSMCheck() {
+    dsm_check.innerHTML = "<h2>Check DSM Nodes' Status</h2>"
+    dsm_check.innerHTML += `<div>name: <input type="text" id="v_name"> type: <input type="text" id="v_type"></div>`
+    dsm_check.innerHTML += `<div><button onclick="checkAllNodes()">Check All Nodes</button></div>`
+
+    for (var i = 0; i < nodes.length; i++) {
+      var check_node_str = `checkNode(${i})`
+      dsm_check.innerHTML += `<div id=node_${nodes[i].id}>
+      <button onclick="${check_node_str}">Check Node ${nodes[i].id}</button><div id=node_${nodes[i].id}_result></div></div>`
+    }
+  }
+
+  function checkAllNodes() {
+    for (var i = 0; i < nodes.length; i++) {
+      checkNode(i)
+    }
+  }
+
+  function checkNode(i) {
+    var node = nodes[i]
+    var check_type = document.getElementById(`v_type`).value
+    var check_name = document.getElementById(`v_name`).value
+    if (check_type == "" || check_name == "") {
+      return
+    }
+    var offset = 0
+    var length = 4
+
+    var result_str = `<p style="color: red;">Node ${node.id} ${check_type} ${check_name} = `
+    switch (check_type) {
+      case "Int32":
+        length = 4
+        break
+      case "Int64":
+        length = 8
+        break
+      case "Float":
+        length = 4
+        break
+      case "Double":
+        length = 8
+        break
+      default:
+        length = 4
+    }
+    var url = `http://${node.address}:${node.port}/mem/read?name=${check_name}&offset=${offset}&length=${length}`
+    // http request and get response of bytes
+    var xhr = new XMLHttpRequest()
+    xhr.open("POST", url, true)
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState == 4 && xhr.status == 200) {
+        var bytes = base64ToBytes(xhr.responseText)
+        console.log(bytes)
+        var value = 0
+        switch (check_type) {
+          case "Int32":
+            value = bytesToInt32(bytes)
+            break
+          case "Int64":
+            value = bytesToInt64(bytes)
+            break
+          case "Float":
+            value = bytesToFloat(bytes)
+            break
+          case "Double":
+            value = bytesToDouble(bytes)
+            break
+          default:
+            value = new Int32Array(bytes)[0]
+        }
+        console.log(value)
+        document.getElementById(`node_${node.id}_result`).innerHTML = result_str + value + "</p>"
+      }
+    }
+    xhr.send()
+
+
+
+  }
+
+</script>

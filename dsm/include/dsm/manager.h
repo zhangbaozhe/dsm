@@ -3,7 +3,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 12:56:32 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-18 14:18:19
+ * @Last Modified time: 2024-05-05 16:11:44
  */
 #pragma once
 
@@ -36,6 +36,9 @@ class Manager {
   Manager(Manager &&) = delete;
   Manager &operator=(const Manager &) = delete;
   Manager &operator=(Manager &&) = delete;
+
+  size_t get_id() const { return m_config.id; }
+  size_t get_peer_num() const { return m_config.peers.size(); }
 
 
   void create_mutex(const std::string &name);
@@ -126,7 +129,7 @@ class Manager {
 
 inline std::string random_string( size_t length )
 {
-  auto randchar = []() -> char
+  static auto randchar = []() -> char
   {
     const char charset[] =
     "0123456789"

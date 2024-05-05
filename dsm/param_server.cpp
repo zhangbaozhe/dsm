@@ -4,7 +4,7 @@
  * @Author: Baozhe ZHANG 
  * @Date: 2024-04-18 13:32:24 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-18 14:57:10
+ * @Last Modified time: 2024-05-05 16:11:34
  */
 
 #include "utils/safe_map.h"
@@ -27,15 +27,18 @@ int main(int argc, char *argv[]) {
   server.new_task_queue = [] { return new httplib::ThreadPool(1); };
 
   server.Post("/health", [](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     res.status = 200;
     res.set_content("OK", "text/plain");
   });
 
   server.Post("/stop", [&server](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     server.stop();
   });
 
   server.Post("/param/registration", [&PARAMS, &SYNC_FLAGS](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     auto name = req.get_param_value("name");
     if (PARAMS.find(name)) {
       res.status = 400;
@@ -51,6 +54,7 @@ int main(int argc, char *argv[]) {
   });
 
   server.Post("/param/deletion", [&PARAMS, &SYNC_FLAGS](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     auto name = req.get_param_value("name");
     if (!PARAMS.find(name)) {
       res.status = 400;
@@ -67,6 +71,7 @@ int main(int argc, char *argv[]) {
 
 
   server.Post("/param/write", [&PARAMS, &SYNC_FLAGS](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     int id = std::stoi(req.get_param_value("id"));
     auto name = req.get_param_value("name");
     auto value = std::stoll(req.get_param_value("value"));
@@ -92,6 +97,7 @@ int main(int argc, char *argv[]) {
   });
 
   server.Post("/param/read", [&PARAMS, &SYNC_FLAGS](const httplib::Request &req, httplib::Response &res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
     int id = std::stoi(req.get_param_value("id"));
     auto name = req.get_param_value("name");
 

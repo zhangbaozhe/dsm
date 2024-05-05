@@ -1,9 +1,8 @@
 /*
- * @Brief: 
  * @Author: Baozhe ZHANG 
- * @Date: 2024-03-29 12:39:59 
+ * @Date: 2024-05-05 16:11:28 
  * @Last Modified by: Baozhe ZHANG
- * @Last Modified time: 2024-04-18 14:58:12
+ * @Last Modified time: 2024-05-05 16:54:57
  */
 
 #pragma once
@@ -14,6 +13,7 @@
 #include <string>
 #include <gsl-lite.hpp>
 #include <atomic>
+#include <iostream>
 
 namespace dsm {
 
@@ -89,6 +89,9 @@ class Element final : public Object {
   explicit Element(Object &&rhs) : Object(std::move(rhs)) {
     *this = static_cast<T>(0);
   }
+  explicit Element(Object &&rhs, T t) : Object(std::move(rhs)) {
+    *this = static_cast<T>(t);
+  }
 
   ~Element() override = default;
 
@@ -153,7 +156,7 @@ class Element final : public Object {
   }
 
   template <typename U>
-  T operator+(U t) {
+  T operator+(const U &t) {
     static_assert(std::is_same<U, Element<int32_t>>::value || 
                   std::is_same<U, Element<uint32_t>>::value || 
                   std::is_same<U, Element<int64_t>>::value || 
@@ -166,7 +169,7 @@ class Element final : public Object {
   }
 
   template <typename U>
-  T operator-(U t) {
+  T operator-(const U &t) {
     static_assert(std::is_same<U, Element<int32_t>>::value || 
                   std::is_same<U, Element<uint32_t>>::value || 
                   std::is_same<U, Element<int64_t>>::value || 
@@ -183,7 +186,7 @@ class Element final : public Object {
   }
 
   template <typename U>
-  T operator*(U t) {
+  T operator*(const U &t) {
     static_assert(std::is_same<U, Element<int32_t>>::value || 
                   std::is_same<U, Element<uint32_t>>::value || 
                   std::is_same<U, Element<int64_t>>::value || 
@@ -196,7 +199,7 @@ class Element final : public Object {
   }
 
   template <typename U>
-  T operator/(U t) {
+  T operator/(const U &t) {
     static_assert(std::is_same<U, Element<int32_t>>::value || 
                   std::is_same<U, Element<uint32_t>>::value || 
                   std::is_same<U, Element<int64_t>>::value || 
@@ -209,7 +212,7 @@ class Element final : public Object {
   }
 
   template <typename U>
-  T operator%(U t) {
+  T operator%(const U &t) {
     static_assert(std::is_integral<U>::value || 
                   std::is_same<U, Element<int32_t>>::value ||
                   std::is_same<U, Element<uint32_t>>::value ||
@@ -367,7 +370,7 @@ template <typename T, size_t N>
 class ArrayCompact final : public Object {
   static_assert(std::is_floating_point<T>::value || 
                 std::is_integral<T>::value ||
-                std::is_same<T, Char>::value ||
+                std::is_same<T, char>::value ||
                 "T must be a floating point or integral or char type");
 
  public: 
@@ -428,8 +431,9 @@ class Array final {
                 "T must be an Element type ");
   using value_type = T;
  public: 
+  const static size_t size = N;
   Array() = delete;
-  explicit Array(gsl::span<Object *> data) {
+  explicit Array(gsl::span<Object *> data) : m_data(N), m_names(N) {
     if (data.size() != N) {
       throw std::invalid_argument("Data size does not match");
     }
@@ -467,13 +471,13 @@ class Array final {
     return m_names[i];
   }
 
-  const std::array<std::string, N> &names() const {
+  const std::vector<std::string> &names() const {
     return m_names;
   }
 
  private:
-  std::array<T*, N> m_data;
-  std::array<std::string, N> m_names;
+  std::vector<T*> m_data;
+  std::vector<std::string> m_names;
 }; // class Array
 
 using Vector2F = Array<Float, 2>;
@@ -483,7 +487,12 @@ using Vector2D = Array<Double, 2>;
 using Vector3D = Array<Double, 3>;
 using Vector4D = Array<Double, 4>;
 
-template <typename T, size_t M, size_t N>
+/**
+ * @brief Row major
+ * 
+ * @tparam T 
+ */
+template <typename T>
 class Matrix final {
   static_assert(std::is_same<T, Int32>::value || 
                 std::is_same<T, UInt32>::value || 
@@ -497,37 +506,78 @@ class Matrix final {
   using value_type = T;
  public: 
   Matrix() = delete;
-  explicit Matrix(gsl::span<Object *> data) {
+  explicit Matrix(gsl::span<Object *> data, size_t _M, size_t _N) : M(_M), N(_N), m_data(M, std::vector<T*>(N)), m_names(M, std::vector<std::string>(N)){
     if (data.size() != M * N) {
       throw std::invalid_argument("Data size does not match");
     }
     for (size_t i = 0; i < M; i++) {
       for (size_t j = 0; j < N; j++) {
         m_data[i][j] = static_cast<T*>(data[i * N + j]);
-        m_data[i][j] = data[i * N + j]->get_name();
+        m_names[i][j] = data[i * N + j]->get_name();
       }
+    }
+  }
+  explicit Matrix(const std::vector<std::vector<T*>> &data, 
+                  const std::vector<std::vector<std::string>> &names, 
+                  size_t _M, size_t _N) : M(_M), N(_N), m_data(data), m_names(names) {
+    if (data.size() != M || data[0].size() != N) {
+      throw std::invalid_argument("Data size does not match");
     }
   }
 
   ~Matrix() = default;
 
-  Matrix(const Matrix &) = delete;
-  Matrix(Matrix &&) = delete;
-  Matrix &operator=(const Matrix &) = delete;
-  Matrix &operator=(Matrix &&) = delete;
+  // Matrix(const Matrix &) = delete;
+  // Matrix(Matrix &&) = delete;
+  // Matrix &operator=(const Matrix &) = delete;
+  // Matrix &operator=(Matrix &&) = delete;
 
-  Array<T, N> &operator[](size_t i) {
-    if (i >= M) {
-      throw std::out_of_range("Index out of range");
+  Matrix<T> clone() {
+    std::vector<std::vector<T*>> tmp_data(M, std::vector<T*>(N));
+    std::vector<std::vector<std::string>> tmp_names(M, std::vector<std::string>(N));
+    for (size_t i = 0; i < M; i++) {
+      for (size_t j = 0; j < N; j++) {
+        tmp_data[i][j] = m_data[i][j];
+        tmp_names[i][j] = m_names[i][j] + "_clone";
+      }
     }
-    return m_data[i];
+    return Matrix<T>(tmp_data, tmp_names, M, N);
   }
 
-  const Array<T, N> &operator[](size_t i) const {
+  Matrix<T> row(size_t i) {
     if (i >= M) {
       throw std::out_of_range("Index out of range");
     }
-    return m_data[i];
+    return Matrix<T>(m_data[i], 1, N);
+  }
+
+  const Matrix<T> row(size_t i) const {
+    if (i >= M) {
+      throw std::out_of_range("Index out of range");
+    }
+    return Matrix<T>(m_data[i], 1, N);
+  }
+
+  Matrix<T> col(size_t j) {
+    if (j >= N) {
+      throw std::out_of_range("Index out of range");
+    }
+    std::vector<T*> tmp(M);
+    for (size_t i = 0; i < M; i++) {
+      tmp[i] = m_data[i][j];
+    }
+    return Matrix<T>(tmp, M, 1);
+  }
+
+  const Matrix<T> col(size_t j) const {
+    if (j >= N) {
+      throw std::out_of_range("Index out of range");
+    }
+    std::vector<T*> tmp(M);
+    for (size_t i = 0; i < M; i++) {
+      tmp[i] = m_data[i][j];
+    }
+    return Matrix<T>(tmp, M, 1);
   }
 
   T &operator()(size_t i, size_t j) {
@@ -544,11 +594,11 @@ class Matrix final {
     return *m_data[i][j];
   }
 
-  const std::array<std::array<std::string, N>, M> &names() const {
+  const std::vector<std::vector<std::string>> &names() const {
     return m_names;
   }
 
-  const std::array<std::string, N> &names(size_t i) const {
+  const std::vector<std::string> &names(size_t i) const {
     if (i >= M) {
       throw std::out_of_range("Index out of range");
     }
@@ -562,24 +612,33 @@ class Matrix final {
     return m_names[i][j];
   }
 
+  size_t M;
+  size_t N;
+
  private:
-  std::array<std::array<T*, N>, M> m_data;
-  std::array<std::array<std::string, N>, M> m_names;
+  std::vector<std::vector<T*>> m_data;
+  std::vector<std::vector<std::string>> m_names;
 }; // class Matrix
 
-
-using Matrix2F = Matrix<Float, 2, 2>;
-using Matrix3F = Matrix<Float, 3, 3>;
-using Matrix4F = Matrix<Float, 4, 4>;
-using Matrix2D = Matrix<Double, 2, 2>;
-using Matrix3D = Matrix<Double, 3, 3>;
-using Matrix4D = Matrix<Double, 4, 4>;
 
 
 } // namespace dsm
 
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const dsm::Element<T> &e) {
+inline std::ostream &operator<<(std::ostream &os, const dsm::Element<T> &e) {
   os << static_cast<T>(e);
+  return os;
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const dsm::Matrix<T> &m) {
+  size_t M = m.M;
+  size_t N = m.N;
+  for (size_t i = 0; i < M; i++) {
+    for (size_t j = 0; j < N; j++) {
+      os << m(i, j) << " ";
+    }
+    os << std::endl;
+  }
   return os;
 }
