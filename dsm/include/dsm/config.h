@@ -1,5 +1,5 @@
 /*
- * @Brief: 
+ * @Brief: Peer configureation
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 13:44:29 
  * @Last Modified by: Baozhe ZHANG

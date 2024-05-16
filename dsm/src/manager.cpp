@@ -1,5 +1,5 @@
 /*
- * @Brief: 
+ * @Brief: Manager implementation
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-30 17:37:49 
  * @Last Modified by: Baozhe ZHANG

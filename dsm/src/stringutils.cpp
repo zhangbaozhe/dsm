@@ -1,5 +1,5 @@
 /*
- * @Brief: 
+ * @Brief: String utilities
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 15:51:19 
  * @Last Modified by: Baozhe ZHANG

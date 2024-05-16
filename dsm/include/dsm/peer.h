@@ -1,5 +1,5 @@
 /*
- * @Brief: 
+ * @Brief: Peer struct
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-29 13:26:09 
  * @Last Modified by: Baozhe ZHANG

@@ -1,5 +1,5 @@
 /*
- * @Brief: 
+ * @Brief: Object implementation
  * @Author: Baozhe ZHANG 
  * @Date: 2024-03-30 16:13:55 
  * @Last Modified by: Baozhe ZHANG

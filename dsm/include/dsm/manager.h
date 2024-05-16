@@ -65,7 +65,7 @@ class Manager {
   /**
    * @brief Create a new object with the given name and size
    * 
-   * @tparam T 
+   * @tparam T dsm::Element type
    * @param name 
    * @return T* 
    */
@@ -107,6 +107,7 @@ class Manager {
    * NOTE: If we want to achieve easy mutex implementation in this DSM framework,
    *       the underlying mutex `int` should be implemented with `strong` atomicity, 
    *       not in the local memory order, but across the whole DSM framework.
+   *       To achieve this, we have used a centralized paramter sever.
    * GOAL: Need to implement the `strong` atomicity for the `int` type in the `SafeMap` class.
    */
   // utils::SafeMap<std::string, std::atomic_int> m_mutexes;
@@ -143,6 +144,15 @@ inline std::string random_string( size_t length )
   return str;
 }
 
+/**
+ * @brief Generate a list of objects with the given type and prefix
+ * 
+ * @tparam T 
+ * @param manager 
+ * @param num_objects 
+ * @param prefix 
+ * @return std::vector<Object *> 
+ */
 template <typename T>
 inline std::vector<Object *> generate_objects(Manager &manager, size_t num_objects, const std::string &prefix = "") {
   static_assert(std::is_same<T, Int32>::value || 
