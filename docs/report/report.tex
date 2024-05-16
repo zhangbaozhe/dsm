@@ -1,0 +1,62 @@
+\documentclass[journal]{IEEEtran}
+\usepackage[OT1]{fontenc} 
+\usepackage{cite}
+
+\usepackage{amsmath,amsfonts}
+% \usepackage{algorithmic}
+% \usepackage{algorithm}
+\usepackage{array}
+% \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{xcolor}
+\usepackage{subcaption}
+\usepackage{mathtools}  
+\usepackage{amssymb}
+\usepackage{tabulary}
+\usepackage{booktabs}
+\usepackage[ruled,linesnumbered]{algorithm2e}
+\usepackage{hyperref}
+\usepackage{setspace}
+
+
+
+\begin{document}
+
+\title{Development of Distributed Shared Memory Programming Model with Integrated Synchronization Methods}
+
+\author{\IEEEauthorblockN{Baozhe Zhang (119010421)} \\
+\IEEEauthorblockA{School of Science and Engineering \\
+The Chinese University of Hong Kong, Shenzhen \\
+baozhezhang@link.cuhk.edu.cn}
+}
+
+\maketitle
+
+\begin{abstract}
+This project proposes the development of a user-friendly C++ API for Distributed Shared Memory (DSM) systems that includes robust synchronization methods to ensure data consistency. The aim is to simplify the complexity associated with DSM systems and to provide a tool that is both easy to use and efficient in handling shared memory operations and enhancing parallelism over distributed clusters.
+\end{abstract}
+
+\begin{IEEEkeywords}
+distributed shared memory, synchronization, API, C++, network programming
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{D}{istributed} shared memory (DSM) is a programming model that allows developers to write parallel programs as though all processes were running on the same machine and accessing a common physical memory region \cite{nitzberg1991distributed}. In reality, these programs may run on different CPUs within a single machine or across multiple physical machines. For systems equipped with multiple CPUs, the DSM model typically refers to a hardware-implemented approach where multiple CPUs share the same physical memory, facilitated by caches and synchronization mechanisms built into the hardware. Conversely, as for software DSM, multiple processes operating on distinct machines simulate a shared memory environment. These processes coordinate and synchronize over a network, without sharing a physical memory region.
+
+In this project, we propose to develop a software-based DSM system with a focus on the following key aspects:
+\begin{itemize}
+\item \textbf{Memory Consistency}: Our system ensures strict consistency for all read and write operations. Additionally, we plan to offer various consistency models to users, allowing them to optimize performance based on their specific needs.
+\item \textbf{Performance}: The system is designed to be lightweight, aiming to maximize efficiency and minimize resource consumption.
+\item \textbf{User-Friendly API}: We are committed to simplifying the user experience by providing an intuitive API that reduces the complexity of writing distributed parallel programs using the DSM model.
+\end{itemize}
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{report}
+
+\end{document}

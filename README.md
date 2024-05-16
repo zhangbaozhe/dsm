@@ -23,4 +23,15 @@ This will build this project and build the Docker image.
 
 ### integer addition (without synchronization)
 
+```bash
+python docker_simple_test.py int32 5
+```
+This starts 5 nodes to perform addition. 
+
 ### integer addition (with synchronization)
+
+```bash
+python docker_simple_test.py mutex 5
+```
+This starts 5 nodes to perform addition with mutex synchronization. 
+
