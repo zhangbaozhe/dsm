@@ -3,3 +3,7 @@ build/
 docs/proposal/*
 !docs/proposal/proposal.tex
 !docs/proposal/proposal.bib
+
+docs/report/*
+!docs/report/proposal.tex
+!docs/report/proposal.bib

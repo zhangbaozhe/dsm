@@ -48,12 +48,36 @@ distributed shared memory, synchronization, API, C++, network programming
 \section{Introduction}
 \IEEEPARstart{D}{istributed} shared memory (DSM) is a programming model that allows developers to write parallel programs as though all processes were running on the same machine and accessing a common physical memory region \cite{nitzberg1991distributed}. In reality, these programs may run on different CPUs within a single machine or across multiple physical machines. For systems equipped with multiple CPUs, the DSM model typically refers to a hardware-implemented approach where multiple CPUs share the same physical memory, facilitated by caches and synchronization mechanisms built into the hardware. Conversely, as for software DSM, multiple processes operating on distinct machines simulate a shared memory environment. These processes coordinate and synchronize over a network, without sharing a physical memory region.
 
-In this project, we propose to develop a software-based DSM system with a focus on the following key aspects:
+In this project, we developed a software-based DSM system with a focus on the following key aspects:
 \begin{itemize}
 \item \textbf{Memory Consistency}: Our system ensures strict consistency for all read and write operations. Additionally, we plan to offer various consistency models to users, allowing them to optimize performance based on their specific needs.
 \item \textbf{Performance}: The system is designed to be lightweight, aiming to maximize efficiency and minimize resource consumption.
 \item \textbf{User-Friendly API}: We are committed to simplifying the user experience by providing an intuitive API that reduces the complexity of writing distributed parallel programs using the DSM model.
 \end{itemize}
+
+\section{Design \& Implementation}
+In this project, we implemented a distributed shared memory system with the following design choices:
+\begin{itemize}
+\item \textbf{Object-Oriented Design}: We designed the system with a focus on object-oriented principles, encapsulating shared memory objects and operations within a class (\texttt{dsm::Object}) in which \texttt{std::vector<Byte>} keeps the local copy of each shared memory (or object). This design choice allows for a more modular and extensible system.
+\item \textbf{Full Replication}: We adopted a full replication strategy, where each node maintains a local copy of the shared memory. This approach simplifies the system design and ensures that all nodes have access to the most up-to-date data.
+\item \textbf{Data Structure}: We used a hash table (e.g., using \texttt{std::unordered\_map<K, V>}) on each node to store the shared memory data. Each node maintains a local copy of the shared memory, and the hash table is used to store the key-value pairs.
+\item \textbf{Write Update Propagation}: When a node writes to a shared memory object, the update is propagated to all other nodes in the system. This ensures that all nodes have consistent data.
+\item \textbf{Read Operation}: When a node reads from a shared memory object, it retrieves the data from its local copy. This operation is fast and does not require communication with other nodes.
+\item \textbf{Mutual Exclusion Lock}: We implemented a centrailized mutual exclusion structure to ensure that only one node can write to a shared memory object at a time if using the mutex. This design needs another parameter server to manage to lock state, but simplifies the implementation. 
+\end{itemize}
+
+To implement this system, we used C++ as the programming language. To handle the network communication, we used the \texttt{cpp-httplib} library\footnote{\url{https://github.com/yhirose/cpp-httplib}}, which provides a simple and lightweight HTTP server and client APIs. We used this library to send and receive data between nodes in the DSM system. 
+
+The main entrypoint to use this framework is the manager class \texttt{dsm::Manager}. The manager class is responsible for initializing the DSM system, creating shared memory objects, and providing APIs for reading and writing to shared memory objects (based on \texttt{dsm::Object}). The manager class also handles the communication between nodes to ensure that all nodes have consistent data. 
+The system needs to be initialized with the number of nodes and the IP addresses of all nodes. The manager class then creates a server on each node to listen for incoming requests from other nodes. When a node writes to a shared memory object, the manager class sends an HTTP request to all other nodes to update their local copies of the shared memory. When a node reads from a shared memory object, it retrieves the data from its local copy.
+
+\section{Conclusion}
+
+In this project, we developed a distributed shared memory system with a focus on memory consistency and user-friendliness. The system is designed to be lightweight and efficient, with a user-friendly API that simplifies the process of writing distributed parallel programs using the DSM model. 
+
+The system can be applied into computed sceniros with data sharring and dependencies (e.g., multiple nodes working on a same data). The system can be further optimized by implementing more advanced synchronization methods, such as distributed locks or transactional memory. Additionally, the system can be extended to support more advanced consistency models, such as eventual consistency or causal consistency.
+
+However, there are also some limitations in the current implementation. For example, the system does not handle network failures or node failures, which can lead to data inconsistency. The performance of this system is poor due to the easy implementation choices and HTTP communication overhead. Additionally, the system does not support dynamic scaling, where nodes can be added or removed from the system at runtime. These limitations can be addressed in future work to make the system more robust and scalable.
 
 
 \bibliographystyle{IEEEtran}
